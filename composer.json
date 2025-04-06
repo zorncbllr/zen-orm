@@ -1,0 +1,19 @@
+{
+  "name": "zorncbllr/zen-orm",
+  "type": "library",
+  "autoload": {
+    "psr-4": {
+      "ZenOrm\\": "src/"
+    }
+  },
+  "authors": [
+    {
+      "name": "Manuel",
+      "email": "caballeromanuel203@gmail.com"
+    }
+  ],
+  "require": {},
+  "scripts": {
+    "dev": "php -S localhost:3000 -t public -f index.php"
+  }
+}
