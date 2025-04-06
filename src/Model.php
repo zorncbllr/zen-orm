@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace ZenOrm;
 
+use AllowDynamicProperties;
 use PDO;
 
+#[AllowDynamicProperties]
 abstract class Model
 {
     abstract public function schema();
