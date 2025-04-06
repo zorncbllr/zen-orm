@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace ZenOrm;
 
 use PDO;
+use PDOException;
 
 class ZenOrm
 {
     protected PDO $pdo;
+
     public static PDO $pdoGetter;
+
     protected string $dsn;
+
+    /** @var array<Model> $models */
     protected array $models;
 
     public function __construct($dsn)
@@ -43,8 +48,30 @@ class ZenOrm
         }
     }
 
-    public function getModels()
+    /** @return array<string> */
+    public function getModels(): array
     {
         return $this->models;
+    }
+
+    public function migrate()
+    {
+        try {
+            $modelClasses = $this->getModels();
+            $query = "";
+
+            foreach ($modelClasses as $modelClass) {
+                $model = new $modelClass;
+                $table = new Column($modelClass);
+
+                $model->schema($table);
+
+                $query .= $table->getQuery();
+            }
+
+            $this->pdo->exec($query);
+        } catch (PDOException $e) {
+            die('ZenOrm Exception: ' . $e->getMessage());
+        }
     }
 }

@@ -10,7 +10,7 @@ use PDO;
 #[AllowDynamicProperties]
 abstract class Model
 {
-    abstract public function schema();
+    abstract public function schema(Column $column);
 
     protected string $queryString = "";
     protected array $queryDependencies = [];

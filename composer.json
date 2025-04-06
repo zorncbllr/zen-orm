@@ -12,7 +12,6 @@
       "email": "caballeromanuel203@gmail.com"
     }
   ],
-  "require": {},
   "scripts": {
     "dev": "php -S localhost:3000 -t public -f index.php"
   }
