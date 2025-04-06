@@ -57,6 +57,14 @@ class Column
         return $this;
     }
 
+    public function unique(): Column
+    {
+        $this->columnArgs[$this->currentColumn] = $this->columnArgs[$this->currentColumn] . ' unique';
+
+        return $this;
+    }
+
+
     public function int(string $column, $size = null)
     {
         $this->currentColumn = $column;
