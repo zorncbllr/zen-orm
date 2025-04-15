@@ -17,7 +17,18 @@ abstract class Model
 
     public function save()
     {
-        print_r($this->getTable());
+        $table = $this->getTable();
+        $vars = array_keys(get_object_vars($this));
+        $fields = implode(', ', $vars);
+        $placeHolders = implode(
+            ', ',
+            array_map(fn($field) => ":$field", $vars)
+        );
+
+        $query = "insert into $table ($fields) values ($placeHolders)";
+
+        $stmt = ZenOrm::$pdo->prepare($query);
+        $stmt->execute(get_object_vars($this));
     }
 
     private function getTable(): string

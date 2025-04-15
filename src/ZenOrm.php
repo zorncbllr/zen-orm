@@ -9,9 +9,7 @@ use PDOException;
 
 class ZenOrm
 {
-    protected PDO $pdo;
-
-    public static PDO $pdoGetter;
+    public static PDO $pdo;
 
     protected string $dsn;
 
@@ -21,12 +19,10 @@ class ZenOrm
     public function __construct($dsn)
     {
         try {
-            $this->pdo = new PDO($dsn, null, null, [
+            self::$pdo = new PDO($dsn, null, null, [
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_CLASS,
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
             ]);
-
-            self::$pdoGetter = $this->pdo;
 
             $this->dsn = $dsn;
             $this->models = [];
@@ -54,5 +50,24 @@ class ZenOrm
         return $this->models;
     }
 
-    public function migrate() {}
+    public function migrate()
+    {
+        try {
+            $modelClasses = $this->getModels();
+            $query = "";
+
+            foreach ($modelClasses as $modelClass) {
+                $model = new $modelClass;
+                $column = new Column($modelClass);
+
+                $model->schema($column);
+
+                $query .= $column->getQuery();
+            }
+
+            self::$pdo->exec($query);
+        } catch (PDOException $e) {
+            die('ZenOrm Exception: ' . $e->getMessage());
+        }
+    }
 }
