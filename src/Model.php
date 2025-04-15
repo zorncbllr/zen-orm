@@ -4,34 +4,115 @@ declare(strict_types=1);
 
 namespace ZenOrm;
 
+use AllowDynamicProperties;
+
+#[AllowDynamicProperties]
 abstract class Model
 {
+    protected Column $column;
+
     public function __construct(...$args)
     {
+        $this->column = new Column($this->getTable());
+
+        $this->schema();
+
         foreach ($args as $key => $value) {
             $this->$key = $value;
         }
     }
 
-    abstract public function schema(Column $column);
+    abstract public function schema();
+
+    public static function findById(string | int $id): Model
+    {
+        $instance = new (get_called_class());
+        $table = $instance->getTable();
+
+        $primaryKey = $instance->column->getPrimaryKey();
+
+        $stmt = ZenOrm::$pdo->prepare("select * from $table where $primaryKey = :$primaryKey");
+        $stmt->execute([$primaryKey => $id]);
+
+        return $stmt->fetchObject(get_called_class());
+    }
 
     public function save()
     {
         $table = $this->getTable();
-        $vars = array_keys(get_object_vars($this));
-        $fields = implode(', ', $vars);
-        $placeHolders = implode(
-            ', ',
-            array_map(fn($field) => ":$field", $vars)
+        $model = $this->getFieldAndPlaceholder();
+
+        $fields = implode(', ', $model['fields']);
+        $placeholders = implode(', ', $model['placeholders']);
+
+        $parameters = array_filter(
+            get_object_vars($this),
+            fn($vars) => !($vars instanceof Column)
         );
 
-        $query = "insert into $table ($fields) values ($placeHolders)";
+        $query = "insert into $table ($fields) values ($placeholders)";
 
         $stmt = ZenOrm::$pdo->prepare($query);
-        $stmt->execute(get_object_vars($this));
+        $stmt->execute($parameters);
     }
 
-    private function getTable(): string
+    public function update()
+    {
+        $table = $this->getTable();
+
+        $fields = $this->getFieldAndPlaceholder()['fields'];
+
+        $parameters = [];
+
+        foreach ($this as $key => $value) {
+            if (in_array($key, $fields)) {
+                $parameters[$key] = $value;
+            }
+        }
+
+        $values = implode(", ", array_map(
+            fn($field) =>  "$field = :$field",
+            $fields
+        ));
+
+        print_r($parameters);
+
+        $primaryKey = $this->column->getPrimaryKey();
+
+        $query = "update $table set $values where $primaryKey = :$primaryKey";
+
+        $stmt = ZenOrm::$pdo->prepare($query);
+        $stmt->execute([
+            ...$parameters,
+            $primaryKey => $this->$primaryKey
+        ]);
+    }
+
+    public function getMigrationQuery()
+    {
+        return $this->column->getQuery();
+    }
+
+    protected function getFieldAndPlaceholder(): array
+    {
+        $vars = array_keys(
+            array_filter(
+                get_object_vars($this),
+                fn($var) => !($var instanceof Column)
+            )
+        );
+
+        $fields = array_filter($vars, fn($var) => $var != $this->column->getPrimaryKey());
+
+        $placeholders = array_map(fn($field) => ":$field", $fields);
+
+        return [
+            'fields' => $fields,
+            'placeholders' => $placeholders
+        ];
+    }
+
+    protected function getTable(): string
     {
         $tokens = explode('\\', get_called_class());
         $class = $tokens[sizeof($tokens) - 1];

@@ -10,31 +10,39 @@ class Column
     protected string $currentColumn;
     protected array $columnArgs = [];
 
-    public function __construct(string $model)
+    protected string $primaryKey = 'id';
+
+    public function __construct(string $table)
     {
-        $token = explode('\\', $model);
-        $this->table = strtolower($token[sizeof($token) - 1]) . "s";
+        $this->table = $table;
     }
 
-    public function getQuery()
+    public function getPrimaryKey(): string
+    {
+        return $this->primaryKey;
+    }
+
+    public function getQuery(): string
     {
         $args = implode(', ', $this->columnArgs);
 
         return "drop table if exists {$this->table}; create table {$this->table} ($args);";
     }
 
-    public function id(string $id = 'id')
+    public function id(string $id = 'id'): Column
     {
         $this->currentColumn = $id;
+        $this->primaryKey = $id;
 
         $this->columnArgs[$id] = "$id int primary key auto_increment";
 
         return $this;
     }
 
-    public function uuid(string $id = 'id')
+    public function uuid(string $id = 'id'): Column
     {
         $this->currentColumn = $id;
+        $this->primaryKey = $id;
 
         $this->columnArgs[$id] = "$id char(36) primary key default (uuid())";
 
@@ -65,7 +73,7 @@ class Column
     }
 
 
-    public function int(string $column, $size = null)
+    public function int(string $column, $size = null): Column
     {
         $this->currentColumn = $column;
 
@@ -74,7 +82,7 @@ class Column
         return $this;
     }
 
-    public function float(string $column, $size = null)
+    public function float(string $column, $size = null): Column
     {
         $this->currentColumn = $column;
 
@@ -83,7 +91,7 @@ class Column
         return $this;
     }
 
-    public function char(string $column, $size = null)
+    public function char(string $column, $size = null): Column
     {
         $this->currentColumn = $column;
 
@@ -93,7 +101,7 @@ class Column
     }
 
 
-    public function text(string $column, $size = null)
+    public function text(string $column, $size = null): Column
     {
         $this->currentColumn = $column;
 
@@ -102,7 +110,7 @@ class Column
         return $this;
     }
 
-    public function binary(string $column, $size = null)
+    public function binary(string $column, $size = null): Column
     {
         $this->currentColumn = $column;
 
@@ -111,7 +119,7 @@ class Column
         return $this;
     }
 
-    public function blob(string $column)
+    public function blob(string $column): Column
     {
         $this->currentColumn = $column;
 
@@ -120,7 +128,7 @@ class Column
         return $this;
     }
 
-    public function timestamps()
+    public function timestamps(): Column
     {
         $this->columnArgs['created_at'] = 'created_at timestamp default current_timestamp';
 
@@ -129,7 +137,7 @@ class Column
         return $this;
     }
 
-    public function created_at()
+    public function created_at(): Column
     {
         $this->columnArgs['created_at'] = 'created_at timestamp default current_timestamp';
 

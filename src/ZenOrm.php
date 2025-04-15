@@ -58,11 +58,8 @@ class ZenOrm
 
             foreach ($modelClasses as $modelClass) {
                 $model = new $modelClass;
-                $column = new Column($modelClass);
 
-                $model->schema($column);
-
-                $query .= $column->getQuery();
+                $query .= $model->getMigrationQuery();
             }
 
             self::$pdo->exec($query);
