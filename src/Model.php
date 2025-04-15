@@ -4,136 +4,45 @@ declare(strict_types=1);
 
 namespace ZenOrm;
 
-use AllowDynamicProperties;
-use PDO;
-
-#[AllowDynamicProperties]
 abstract class Model
 {
+    public function __construct(...$args)
+    {
+        foreach ($args as $key => $value) {
+            $this->$key = $value;
+        }
+    }
+
     abstract public function schema(Column $column);
 
-    protected string $queryString = "";
-    protected array $queryDependencies = [];
-
-    public static function all()
+    public function save()
     {
-        $token  = explode('\\', get_called_class());
-        $table = strtolower($token[sizeof($token) - 1]) . 's';
-
-        return ZenOrm::$pdoGetter->query("select * from $table")->fetchAll(PDO::FETCH_CLASS, get_called_class());
+        print_r($this->getTable());
     }
 
-    public static function create(array $data)
+    private function getTable(): string
     {
-        $token  = explode('\\', get_called_class());
-        $table = strtolower($token[sizeof($token) - 1]) . 's';
+        $tokens = explode('\\', get_called_class());
+        $class = $tokens[sizeof($tokens) - 1];
+        $words = preg_split("/(?=[A-Z])/", $class);
 
-        $columns = implode(',', array_keys($data));
-        $values = implode(',', array_map(
-            fn($col) => ":$col",
-            array_keys($data)
-        ));
+        $table = "";
 
-        $stmt = ZenOrm::$pdoGetter->prepare("insert into $table ($columns) values ($values)");
-
-        $stmt->execute($data);
-    }
-
-    public static function update(array $data): Model
-    {
-        $token  = explode('\\', get_called_class());
-        $table = strtolower($token[sizeof($token) - 1]) . 's';
-
-        $fields = [];
-        foreach ($data as $key => $value) {
-            array_push($fields, "$key = :$key");
+        for ($i = 1; $i < sizeof($words); $i++) {
+            $table .= $words[$i] . (array_key_last($words) !== $i ? "_" : "");
         }
 
-        $fields = implode(', ', $fields);
+        $table = strtolower($table);
 
-        $model = get_called_class();
-        $modelInstance = new $model;
-
-        $modelInstance->queryString = "update $table set $fields";
-
-        $modelInstance->queryDependencies = $data;
-
-        return $modelInstance;
-    }
-
-    public static function find(array $args = ["*"]): Model
-    {
-        $token  = explode('\\', get_called_class());
-        $table = strtolower($token[sizeof($token) - 1]) . 's';
-
-        $fields = implode(', ', $args);
-
-        $model = get_called_class();
-        $modelInstance = new $model;
-
-        $modelInstance->queryString = "select $fields from $table";
-
-        return $modelInstance;
-    }
-
-    public static function delete(): Model
-    {
-        $token  = explode('\\', get_called_class());
-        $table = strtolower($token[sizeof($token) - 1]) . 's';
-
-        $model = get_called_class();
-        $modelInstance = new $model;
-
-        $modelInstance->queryString = "delete from $table";
-
-        return $modelInstance;
-    }
-
-    public function where(array $args)
-    {
-        $someArgs = [];
-        foreach ($args as $key => $value) {
-            array_push($someArgs, "$key = :$key");
+        if (str_ends_with($table, 'ss') || str_ends_with($table, 'h')) {
+            $table .= 'es';
+        } elseif (str_ends_with($table, 'y')) {
+            $table[strlen($table) - 1] = 'i';
+            $table .= 'es';
+        } else {
+            $table .= 's';
         }
 
-        $someArgs = implode(' and ', $someArgs);
-
-        $this->queryString .= " where $someArgs";
-        $this->queryDependencies = [...$this->queryDependencies, ...$args];
-
-        return $this;
-    }
-
-    public function exec()
-    {
-        $stmt = ZenOrm::$pdoGetter->prepare($this->queryString);
-        $stmt->execute($this->queryDependencies);
-
-        unset($this->queryString);
-        unset($this->queryDependencies);
-    }
-
-    public function many(): array
-    {
-        $stmt = ZenOrm::$pdoGetter->prepare($this->queryString);
-        $stmt->execute($this->queryDependencies);
-
-        unset($this->queryString);
-        unset($this->queryDependencies);
-
-        return $stmt->fetchAll(PDO::FETCH_CLASS, get_called_class());
-    }
-
-    public function one(): Model
-    {
-        $stmt = ZenOrm::$pdoGetter->prepare($this->queryString);
-        $stmt->execute($this->queryDependencies);
-
-        unset($this->queryString);
-        unset($this->queryDependencies);
-
-        return $stmt->fetchObject(
-            get_called_class(),
-        );
+        return $table;
     }
 }

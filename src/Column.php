@@ -45,14 +45,14 @@ class Column
     {
         $this->currentColumn = $column;
 
-        $this->columnArgs[$column] = $size ? "$column varchar($size)" : "$column varchar(255)";
+        $this->columnArgs[$column] = ($size ? "$column varchar($size)" : "$column varchar(255)") . ' not null';
 
         return $this;
     }
 
-    public function required(): Column
+    public function nullable(): Column
     {
-        $this->columnArgs[$this->currentColumn] = $this->columnArgs[$this->currentColumn] . ' not null';
+        $this->columnArgs[$this->currentColumn] = str_replace(' not null', '', $this->columnArgs[$this->currentColumn]);
 
         return $this;
     }
@@ -69,7 +69,7 @@ class Column
     {
         $this->currentColumn = $column;
 
-        $this->columnArgs[$column] = $size ? "$column int($size)" : "$column int";
+        $this->columnArgs[$column] = ($size ? "$column int($size)" : "$column int") . ' not null';
 
         return $this;
     }
@@ -78,7 +78,7 @@ class Column
     {
         $this->currentColumn = $column;
 
-        $this->columnArgs[$column] = $size ? "$column float($size)" : "$column float";
+        $this->columnArgs[$column] = ($size ? "$column float($size)" : "$column float") . ' not null';
 
         return $this;
     }
@@ -87,7 +87,7 @@ class Column
     {
         $this->currentColumn = $column;
 
-        $this->columnArgs[$column] = $size ? "$column char($size)" : "$column char";
+        $this->columnArgs[$column] = ($size ? "$column char($size)" : "$column char") . ' not null';
 
         return $this;
     }
@@ -97,7 +97,7 @@ class Column
     {
         $this->currentColumn = $column;
 
-        $this->columnArgs[$column] = $size ? "$column text($size)" : "$column text";
+        $this->columnArgs[$column] = ($size ? "$column text($size)" : "$column text") . ' not null';
 
         return $this;
     }
@@ -106,7 +106,7 @@ class Column
     {
         $this->currentColumn = $column;
 
-        $this->columnArgs[$column] = $size ? "$column binary($size)" : "$column binary";
+        $this->columnArgs[$column] = ($size ? "$column binary($size)" : "$column binary") . ' not null';
 
         return $this;
     }
@@ -115,7 +115,7 @@ class Column
     {
         $this->currentColumn = $column;
 
-        $this->columnArgs[$column] = "$column blob";
+        $this->columnArgs[$column] = "$column blob not null";
 
         return $this;
     }

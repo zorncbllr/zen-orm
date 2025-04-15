@@ -54,24 +54,5 @@ class ZenOrm
         return $this->models;
     }
 
-    public function migrate()
-    {
-        try {
-            $modelClasses = $this->getModels();
-            $query = "";
-
-            foreach ($modelClasses as $modelClass) {
-                $model = new $modelClass;
-                $table = new Column($modelClass);
-
-                $model->schema($table);
-
-                $query .= $table->getQuery();
-            }
-
-            $this->pdo->exec($query);
-        } catch (PDOException $e) {
-            die('ZenOrm Exception: ' . $e->getMessage());
-        }
-    }
+    public function migrate() {}
 }
