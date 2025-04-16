@@ -75,8 +75,6 @@ abstract class Model
             $fields
         ));
 
-        print_r($parameters);
-
         $primaryKey = $this->column->getPrimaryKey();
 
         $query = "update $table set $values where $primaryKey = :$primaryKey";
