@@ -9,6 +9,7 @@ class Column
     protected string $table;
     protected string $currentColumn;
     protected array $columnArgs = [];
+    protected array $foreignKeys = [];
 
     protected string $primaryKey = 'id';
 
@@ -24,9 +25,33 @@ class Column
 
     public function getQuery(): string
     {
-        $args = implode(', ', $this->columnArgs);
+        $args = implode(', ', [...$this->columnArgs, ...$this->foreignKeys]);
 
         return "drop table if exists {$this->table}; create table {$this->table} ($args);";
+    }
+
+    public function foreignIdFor(string $class): Column
+    {
+        $instance = new $class;
+        $table = $instance->getTable();
+        $primaryKey = $instance->getColumnDefinition()->getPrimaryKey();
+
+        $this->currentColumn = $primaryKey;
+
+        $keyType = $instance->getColumnDefinition()->columnArgs[$primaryKey];
+
+        if (preg_match("/int/", $keyType)) {
+            $this->columnArgs[$primaryKey] = str_replace("primary key auto_increment", "not null", $keyType);
+        } elseif (preg_match("/uuid/", $keyType)) {
+            $this->columnArgs[$primaryKey] = str_replace("primary key default (uuid())", "not null", $keyType);
+        }
+
+        array_push(
+            $this->foreignKeys,
+            "foreign key ($primaryKey) references {$table} ($primaryKey)"
+        );
+
+        return $this;
     }
 
     public function id(string $id = 'id'): Column

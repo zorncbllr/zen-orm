@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ZenOrm;
 
 use AllowDynamicProperties;
+use PDO;
 
 #[AllowDynamicProperties]
 abstract class Model
@@ -23,6 +24,29 @@ abstract class Model
     }
 
     abstract public function schema();
+
+    public function getColumnDefinition(): Column
+    {
+        return $this->column;
+    }
+
+    public function getMigrationQuery(): string
+    {
+        return $this->column->getQuery();
+    }
+
+    public static function all(array $columns = ["*"]): array
+    {
+        $instance = new (get_called_class());
+        $table = $instance->getTable();
+
+        $stmt = ZenOrm::$pdo->prepare("select " . implode(", ", $columns) . " from $table");
+        $stmt->execute();
+
+        $stmt->setFetchMode(PDO::FETCH_CLASS, get_called_class());
+
+        return $stmt->fetchAll();
+    }
 
     public static function findById(string | int $id): Model
     {
@@ -86,11 +110,6 @@ abstract class Model
         ]);
     }
 
-    public function getMigrationQuery()
-    {
-        return $this->column->getQuery();
-    }
-
     protected function getFieldAndPlaceholder(): array
     {
         $vars = array_keys(
@@ -110,7 +129,7 @@ abstract class Model
         ];
     }
 
-    protected function getTable(): string
+    public function getTable(): string
     {
         $tokens = explode('\\', get_called_class());
         $class = $tokens[sizeof($tokens) - 1];
