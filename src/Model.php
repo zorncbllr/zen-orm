@@ -25,6 +25,50 @@ abstract class Model
 
     abstract public function schema();
 
+    public static function join(string ...$model)
+    {
+        $instance = new (get_called_class());
+        $table = $instance->getTable();
+
+        $query = "select * from $table";
+
+        $models = [$instance::class, ...$model];
+
+        for ($i = 1; $i < sizeof($models); $i++) {
+            $foreignInstance = new $models[$i];
+            $prevInstance = new $models[$i - 1];
+
+            $key = $foreignInstance->getColumnDefinition()->getPrimaryKey();
+
+            $prevTable = $prevInstance->getTable();
+            $currentTable = $foreignInstance->getTable();
+
+            $query .= " join " . $foreignInstance->getTable() . " where $prevTable.$key = $currentTable.$key";
+        }
+
+        return new class($query, get_called_class()) {
+            function __construct(private $query, private $model) {}
+
+            function getOne(array $columns = ["*"])
+            {
+                $stmt = ZenOrm::$pdo->prepare($this->query);
+
+                $stmt->execute();
+
+                return $stmt->fetchObject();
+            }
+
+            function getAll(array $columns = ["*"])
+            {
+                $stmt = ZenOrm::$pdo->prepare($this->query);
+
+                $stmt->execute();
+
+                return $stmt->fetchAll(PDO::FETCH_CLASS);
+            }
+        };
+    }
+
     public function getColumnDefinition(): Column
     {
         return $this->column;
@@ -71,8 +115,10 @@ abstract class Model
 
         $parameters = array_filter(
             get_object_vars($this),
-            fn($vars) => !($vars instanceof Column)
+            fn($vars) => !($vars instanceof Column) && !empty($vars)
         );
+
+        print_r($parameters);
 
         $query = "insert into $table ($fields) values ($placeholders)";
 

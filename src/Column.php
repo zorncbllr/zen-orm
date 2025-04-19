@@ -30,9 +30,9 @@ class Column
         return "drop table if exists {$this->table}; create table {$this->table} ($args);";
     }
 
-    public function foreignIdFor(string $class): Column
+    public function foreignIdFor(string $model): Column
     {
-        $instance = new $class;
+        $instance = new $model;
         $table = $instance->getTable();
         $primaryKey = $instance->getColumnDefinition()->getPrimaryKey();
 
