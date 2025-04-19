@@ -30,7 +30,7 @@ abstract class Model
         $instance = new (get_called_class());
         $table = $instance->getTable();
 
-        $query = "select * from $table";
+        $query = "select :cols from $table";
 
         $models = [$instance::class, ...$model];
 
@@ -51,8 +51,8 @@ abstract class Model
 
             function getOne(array $columns = ["*"])
             {
+                $this->query = str_replace(":cols", implode(", ", $columns), $this->query);
                 $stmt = ZenOrm::$pdo->prepare($this->query);
-
                 $stmt->execute();
 
                 return $stmt->fetchObject();
@@ -60,8 +60,8 @@ abstract class Model
 
             function getAll(array $columns = ["*"])
             {
+                $this->query = str_replace(":cols", implode(", ", $columns), $this->query);
                 $stmt = ZenOrm::$pdo->prepare($this->query);
-
                 $stmt->execute();
 
                 return $stmt->fetchAll(PDO::FETCH_CLASS);
